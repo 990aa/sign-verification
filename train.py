@@ -186,7 +186,7 @@ def train_model(dataset_path, num_epochs=50, batch_size=32, learning_rate=0.001,
     model = SiameseNetwork(embedding_dim=embedding_dim).to(device)
     criterion = ContrastiveLoss(margin=margin)
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5, verbose=True)
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5)
     
     # Count parameters
     total_params = sum(p.numel() for p in model.parameters())
@@ -290,17 +290,26 @@ def train_model(dataset_path, num_epochs=50, batch_size=32, learning_rate=0.001,
 
 
 if __name__ == "__main__":
+    import argparse
     import sys
     
+    parser = argparse.ArgumentParser(description='Train Siamese Network for Signature Verification')
+    parser.add_argument('dataset_path', nargs='?', help='Path to the dataset')
+    parser.add_argument('--epochs', type=int, default=50, help='Number of epochs to train')
+    parser.add_argument('--batch-size', type=int, default=32, help='Batch size')
+    
+    args = parser.parse_args()
+    
+    dataset_path = args.dataset_path
+    
     # Get dataset path from command line or use default
-    if len(sys.argv) > 1:
-        dataset_path = sys.argv[1]
-    else:
+    if not dataset_path:
         # Try to find the dataset in common locations
         possible_paths = [
-            "/root/.cache/kagglehub/datasets/matteocarnebella/cedar-signatures/versions/1",
+            "cedar_signatures",
             "cedar-signatures",
-            "data/cedar-signatures"
+            "data/cedar-signatures",
+            "/root/.cache/kagglehub/datasets/matteocarnebella/cedar-signatures/versions/1"
         ]
         
         dataset_path = None
@@ -320,8 +329,8 @@ if __name__ == "__main__":
     # Train the model
     model, history = train_model(
         dataset_path=dataset_path,
-        num_epochs=50,
-        batch_size=32,
+        num_epochs=args.epochs,
+        batch_size=args.batch_size,
         learning_rate=0.001,
         embedding_dim=128,
         margin=2.0

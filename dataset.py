@@ -39,46 +39,75 @@ class SignatureDataset(Dataset):
         self._create_pairs()
         
     def _load_signatures(self):
-        """Load all signature images and organize by writer ID"""
-        # CEDAR dataset structure: full_org/original_X_Y.png and full_forg/forgeries_X_Y.png
-        # where X is writer ID (1-55) and Y is signature number (1-24 for genuine, 1-24 for forgeries)
+        """Load all signature images and organize by writer ID
+        Supports both flat (full_org/full_forg) and grouped (signatures/signatures_X) structures
+        """
+        # 1. Try flat structure: root/full_org and root/full_forg
+        genuine_flat = self.root_dir / "full_org"
+        forgery_flat = self.root_dir / "full_forg"
         
-        genuine_dir = self.root_dir / "full_org"
-        forgery_dir = self.root_dir / "full_forg"
+        # 2. Try grouped structure: root/signatures/signatures_X
+        grouped_candidates = [
+            self.root_dir / "signatures",
+            self.root_dir
+        ]
         
-        if not genuine_dir.exists() or not forgery_dir.exists():
-            raise ValueError(f"Dataset directories not found in {self.root_dir}")
-        
-        # Load genuine signatures
-        for img_path in genuine_dir.glob("original_*.png"):
-            # Parse filename: original_X_Y.png
-            filename = img_path.stem
-            parts = filename.split("_")
-            if len(parts) == 3:
-                writer_id = int(parts[1])
-                
-                if writer_id not in self.signatures:
-                    self.signatures[writer_id] = {'genuine': [], 'forgery': []}
-                    
-                self.signatures[writer_id]['genuine'].append(img_path)
-        
-        # Load forgery signatures
-        for img_path in forgery_dir.glob("forgeries_*.png"):
-            # Parse filename: forgeries_X_Y.png
-            filename = img_path.stem
-            parts = filename.split("_")
-            if len(parts) == 3:
-                writer_id = int(parts[1])
-                
-                if writer_id not in self.signatures:
-                    self.signatures[writer_id] = {'genuine': [], 'forgery': []}
-                    
-                self.signatures[writer_id]['forgery'].append(img_path)
-        
+        if genuine_flat.exists() and forgery_flat.exists():
+            print(f"Found flat dataset structure in {self.root_dir}")
+            self._load_from_dirs(genuine_flat, forgery_flat)
+        else:
+            # Check for grouped structure
+            found_grouped = False
+            for base_dir in grouped_candidates:
+                if base_dir.exists() and list(base_dir.glob("signatures_*")):
+                    print(f"Found grouped dataset structure in {base_dir}")
+                    found_grouped = True
+                    for author_dir in base_dir.glob("signatures_*"):
+                        self._load_from_mixed_dir(author_dir)
+                    break
+            
+            if not found_grouped:
+                # Debug info
+                print(f"Checked in {self.root_dir}")
+                print(f"  Gap: {genuine_flat.exists()}, {forgery_flat.exists()}")
+                print(f"  Grouped checks: {[d.exists() for d in grouped_candidates]}")
+                raise ValueError(f"Dataset directories not found in {self.root_dir}. Expected 'full_org'/'full_forg' OR 'signatures/signatures_X' structure.")
+
         print(f"Loaded signatures for {len(self.signatures)} writers")
-        for writer_id in list(self.signatures.keys())[:3]:
-            print(f"  Writer {writer_id}: {len(self.signatures[writer_id]['genuine'])} genuine, "
-                  f"{len(self.signatures[writer_id]['forgery'])} forgeries")
+        if self.signatures:
+            for writer_id in list(self.signatures.keys())[:3]:
+                print(f"  Writer {writer_id}: {len(self.signatures[writer_id]['genuine'])} genuine, "
+                      f"{len(self.signatures[writer_id]['forgery'])} forgeries")
+
+    def _load_from_dirs(self, genuine_dir, forgery_dir):
+        # Load genuine
+        for img_path in genuine_dir.glob("original_*.png"):
+            self._add_image(img_path, is_genuine=True)
+        # Load forgery
+        for img_path in forgery_dir.glob("forgeries_*.png"):
+            self._add_image(img_path, is_genuine=False)
+
+    def _load_from_mixed_dir(self, directory):
+        # Load genuine
+        for img_path in directory.glob("original_*.png"):
+            self._add_image(img_path, is_genuine=True)
+        # Load forgery
+        for img_path in directory.glob("forgeries_*.png"):
+            self._add_image(img_path, is_genuine=False)
+            
+    def _add_image(self, img_path, is_genuine):
+        filename = img_path.stem
+        parts = filename.split("_")
+        if len(parts) >= 3:
+            try:
+                writer_id = int(parts[1])
+                if writer_id not in self.signatures:
+                    self.signatures[writer_id] = {'genuine': [], 'forgery': []}
+                
+                key = 'genuine' if is_genuine else 'forgery'
+                self.signatures[writer_id][key].append(img_path)
+            except ValueError:
+                pass
     
     def _create_pairs(self):
         """Create pairs of signatures with labels"""
