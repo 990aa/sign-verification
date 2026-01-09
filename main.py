@@ -5,12 +5,11 @@ This script downloads the dataset needed for signature verification
 
 import kagglehub
 import shutil
-import os
 from pathlib import Path
 
-print("="*70)
+print("=" * 70)
 print(" Downloading CEDAR Signature Dataset")
-print("="*70)
+print("=" * 70)
 print("\nThis will download the CEDAR signature dataset from Kaggle.")
 print("The dataset contains genuine signatures and forgeries from 55 writers.")
 print()
@@ -39,22 +38,22 @@ if dataset_path.exists():
     genuine_dir = dataset_path / "full_org"
     forgery_dir = dataset_path / "full_forg"
     signatures_dir = dataset_path / "signatures"
-    
+
     has_flat = genuine_dir.exists() and forgery_dir.exists()
     has_grouped = signatures_dir.exists() and any(signatures_dir.glob("signatures_*"))
-    
+
     if has_flat or has_grouped:
         if has_flat:
-             genuine_count = len(list(genuine_dir.glob("*.png")))
-             forgery_count = len(list(forgery_dir.glob("*.png")))
+            genuine_count = len(list(genuine_dir.glob("*.png")))
+            forgery_count = len(list(forgery_dir.glob("*.png")))
         else:
-             matched_files = list(signatures_dir.rglob("*.png"))
-             genuine_count = sum(1 for p in matched_files if "original" in p.name)
-             forgery_count = sum(1 for p in matched_files if "forgeries" in p.name)
-        
+            matched_files = list(signatures_dir.rglob("*.png"))
+            genuine_count = sum(1 for p in matched_files if "original" in p.name)
+            forgery_count = sum(1 for p in matched_files if "forgeries" in p.name)
+
         print("\n✓ Dataset verification successful.")
         print(f"Found {genuine_count} genuine and {forgery_count} forgery signatures.")
-        
+
         print("1. Train the model:")
         print(f"   uv run python train.py {dataset_path}")
         print()
@@ -68,4 +67,4 @@ if dataset_path.exists():
 else:
     print("Warning: Dataset path does not exist")
 
-print("="*70)
+print("=" * 70)

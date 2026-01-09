@@ -29,14 +29,14 @@ def check_import(module_name, description):
 
 
 def main():
-    print("="*70)
+    print("=" * 70)
     print(" Signature Verification System - Installation Check")
-    print("="*70)
-    
+    print("=" * 70)
+
     all_checks_passed = True
-    
+
     # Check Python files
-    print("\n📁 Checking Project Files...")
+    print("\nChecking Project Files...")
     files = {
         "main.py": "Dataset downloader",
         "siamese_network.py": "Network architecture",
@@ -48,13 +48,12 @@ def main():
         "pyproject.toml": "Project configuration",
         "README.md": "Documentation",
     }
-    
+
     for file, desc in files.items():
         if not check_file(file, desc):
             all_checks_passed = False
-    
-    # Check dependencies
-    print("\n📦 Checking Dependencies...")
+
+    print("\nChecking Dependencies...")
     dependencies = {
         "torch": "PyTorch",
         "torchvision": "TorchVision",
@@ -66,40 +65,40 @@ def main():
         "tqdm": "TQDM",
         "kagglehub": "KaggleHub",
     }
-    
+
     for module, desc in dependencies.items():
         if not check_import(module, desc):
             all_checks_passed = False
-    
-    # Check Python version
-    print("\n🐍 Checking Python Version...")
+
+    print("\nChecking Python Version...")
     py_version = sys.version_info
     if py_version.major == 3 and py_version.minor >= 12:
         print(f"  ✓ Python {py_version.major}.{py_version.minor}.{py_version.micro}")
     else:
-        print(f"  ✗ Python {py_version.major}.{py_version.minor}.{py_version.micro} (need 3.12+)")
+        print(
+            f"  ✗ Python {py_version.major}.{py_version.minor}.{py_version.micro} (need 3.12+)"
+        )
         all_checks_passed = False
-    
-    # Check for dataset
-    print("\n📊 Checking Dataset...")
+
+    print("\nChecking Dataset...")
     dataset_paths = [
         "/root/.cache/kagglehub/datasets/matteocarnebella/cedar-signatures/versions/1",
         "cedar-signatures",
-        "data/cedar-signatures"
+        "data/cedar-signatures",
     ]
-    
+
     dataset_found = False
     for path in dataset_paths:
         if Path(path).exists():
             print(f"  ✓ Dataset found at: {path}")
             dataset_found = True
             break
-    
+
     if not dataset_found:
-        print("  ⚠️  Dataset not found (run: uv run python main.py)")
-    
+        print("  Dataset not found (run: uv run python main.py)")
+
     # Check for trained model
-    print("\n🧠 Checking Trained Model...")
+    print("\nChecking Trained Model...")
     models_dir = Path("models")
     if models_dir.exists():
         model_files = list(models_dir.glob("*.pth"))
@@ -108,15 +107,15 @@ def main():
             for model in model_files:
                 print(f"      • {model.name}")
         else:
-            print("  ⚠️  No trained models found (run: uv run python train.py)")
+            print("  No trained models found (run: uv run python train.py)")
     else:
-        print("  ⚠️  Models directory not found (run: uv run python train.py)")
-    
+        print("  Models directory not found (run: uv run python train.py)")
+
     # Summary
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     if all_checks_passed:
         print(" ✅ All checks passed!")
-        print("="*70)
+        print("=" * 70)
         print("\n🚀 Your system is ready!")
         print("\nNext steps:")
         if not dataset_found:
@@ -127,15 +126,15 @@ def main():
         print("\nOr use the guided setup:")
         print("  uv run python quickstart.py")
     else:
-        print(" ⚠️  Some checks failed!")
-        print("="*70)
-        print("\n🔧 To fix issues:")
+        print(" Some checks failed!")
+        print("=" * 70)
+        print("\nTo fix issues:")
         print("  1. Install dependencies: uv sync")
         print("  2. Check Python version: python --version (need 3.12+)")
         print("  3. Verify files are present")
-    
-    print("\n" + "="*70)
-    
+
+    print("\n" + "=" * 70)
+
     return 0 if all_checks_passed else 1
 
 
